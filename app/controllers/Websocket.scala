@@ -5,11 +5,16 @@ import java.net.URI
 import io.backchat.hookup._
 import io.backchat.hookup.HookupClientConfig
 import io.backchat.hookup.Disconnected
-import net.liftweb.json.JsonAST.JString
 import io.backchat.hookup.JsonMessage
 import java.text.SimpleDateFormat
-import net.liftweb.json.Printer._
 import net.liftweb.json.JsonAST._
+import play.api.Play.current
+
+import play.modules.reactivemongo._
+import play.modules.reactivemongo.json.collection.JSONCollection
+import scala.concurrent.ExecutionContext.Implicits.global
+
+import com.amigood._
 
 /**
  * Created with IntelliJ IDEA.
@@ -18,7 +23,7 @@ import net.liftweb.json.JsonAST._
  * Time: 2:40 AM
  * To change this template use File | Settings | File Templates.
  */
-object Websocket extends Controller {
+object Websocket extends Controller with MongoController {
 
   val format = new SimpleDateFormat("dd-MM-yyyy hh:mm:ss aaa")
 
@@ -26,18 +31,22 @@ object Websocket extends Controller {
 
     val uri = new URI("ws://websocket.mtgox.com:80/mtgox")
 
-    val client = new DefaultHookupClient(HookupClientConfig(uri)) {
+    val db = ReactiveMongoPlugin.db
+    val collection = db.collection[JSONCollection]("mtgox")
 
+    new DefaultHookupClient(HookupClientConfig(uri)) {
       def receive = {
         case Connected =>
 //          send(TextMessage("{\"channel\":\"d5f06780-30a8-4a48-a2f8-7ed181b4a13f\",  \"op\":\"subscribe\"}"))
         case Disconnected(_) =>
           println("The websocket to " + uri + " disconnected.")
         case JsonMessage(message) => {
-          (message \ "ticker" \ "last" \ "value") match {
-            case JString(value) =>
-//              println(pretty(render(message)))
-              println(format.format(System.currentTimeMillis()) + " - " + value)
+          (message \ "ticker") match {
+            case obj: JObject =>
+              collection.insert(JsonConverts.convert(message))
+
+//              println(pretty(JsonAST.render(message)))
+              println(format.format((obj \ "now") match { case JString(s) => s.toLong / 1000 }) + " - " + (obj \ "last" \ "display_short").values )
             case _ =>
           }
         }
