@@ -6,16 +6,17 @@
  * To change this template use File | Settings | File Templates.
  */
 
-import com.amigood.JsonConverts
 import io.backchat.hookup._
 import io.backchat.hookup.Disconnected
 import io.backchat.hookup.HookupClientConfig
 import io.backchat.hookup.JsonMessage
 import java.net.URI
 import java.text.SimpleDateFormat
+import net.liftweb.json.{Printer, JsonAST}
 import net.liftweb.json.JsonAST._
 import play.api._
 
+import play.api.libs.json.Json
 import play.api.Play.current
 
 import play.modules.reactivemongo._
@@ -38,38 +39,38 @@ object Global extends GlobalSettings {
         case Connected =>
         //          send(TextMessage("{\"channel\":\"d5f06780-30a8-4a48-a2f8-7ed181b4a13f\",  \"op\":\"subscribe\"}"))
         case Disconnected(_) =>
-          println("The websocket to " + uri + " disconnected.")
+          Logger.info("The websocket to " + uri + " disconnected.")
         case JsonMessage(message) => {
           (message \ "ticker") match {
             case obj: JObject =>
-              collection.insert(JsonConverts.convert(message))
-              report(message)
+              collection.insert(Json.parse(Printer.compact((JsonAST.render(message)))))
+              if (Logger.isDebugEnabled) report(message)
             case _ =>
           }
         }
       }
 
       def report(message: JValue) = {
-        //        println(pretty(JsonAST.render(message)))
+        //Logger.trace(pretty(JsonAST.render(message)))
         val now = message \ "ticker" \ "now" match {
           case JString(s) => s.toLong / 1000
           case _ => throw new Exception("Unable to parse: " + message)
         }
 
-        println(format.format(now) + " - " + (message \ "ticker" \ "last" \ "display_short").values)
+        Logger.debug(format.format(now) + " - " + (message \ "ticker" \ "last" \ "display_short").values)
       }
 
       val f = connect()
 
       f onSuccess {
         case Success =>
-          println("The websocket is connected to:" + uri + ".")
+          Logger.info("The websocket is connected to:" + uri + ".")
         case _ =>
       }
 
       f onFailure {
         case _ =>
-          println("The websocket failed to connect to:" + uri + ".")
+          Logger.error("The websocket failed to connect to:" + uri + ".")
       }
 
     }
