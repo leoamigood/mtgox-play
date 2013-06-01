@@ -15,5 +15,5 @@ object Application extends Controller {
   def ticker = Action {
     Ok(views.html.ticker("Your new application is ready, ticker"))
   }
-  
+
 }
