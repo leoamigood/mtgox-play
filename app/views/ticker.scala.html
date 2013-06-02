@@ -1,7 +1,19 @@
-@(message: String)
+@(message: String)(implicit request: RequestHeader)
 
 @main("Welcome to Mt.Minsi") {
-    
-    BTC to USD:
-    
+
+    <div class="greeting"></div>
+
+    <script type="text/javascript" charset="utf-8">
+        $(function() {
+            var WS = window['MozWebSocket'] ? MozWebSocket : WebSocket
+            var sock = new WS("@routes.Application.socket().webSocketURL()")
+
+            sock.onmessage = function(event) {
+                $('.greeting').append(event.data)
+            }
+
+        })
+
+    </script>
 }
