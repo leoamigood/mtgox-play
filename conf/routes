@@ -3,6 +3,7 @@
 # ~~~~
 
 # Home page
+GET     /ticker/socket              controllers.Application.socket
 GET     /ticker                     controllers.Application.ticker
 GET     /                           controllers.Application.index
 

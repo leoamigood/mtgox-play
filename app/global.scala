@@ -76,7 +76,7 @@ object Global extends GlobalSettings {
     val db = ReactiveMongoPlugin.db
     val collection = db.collection[JSONCollection]("mtgox")
 
-    Future {server.start}
+//    Future {server.start}
 
     val uri = new URI("ws://websocket.mtgox.com:80/mtgox")
     new DefaultHookupClient(HookupClientConfig(uri)) {
