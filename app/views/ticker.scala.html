@@ -1,6 +1,6 @@
 @(message: String)(implicit request: RequestHeader)
 
-@import global.scala.Global
+@import com.amigood.minsi.WebsocketServer
 @main("Welcome to Mt.Minsi") {
 
     <div id="ticker"></div>
@@ -8,7 +8,7 @@
     <script type="text/javascript" charset="utf-8">
         $(function() {
             var WS = window['MozWebSocket'] ? MozWebSocket : WebSocket
-            var sock = new WS("@Global.server.name")
+            var sock = new WS("@WebsocketServer.url")
 
             sock.onopen = function() {
                 sock.send('{"subscribe":"d5f06780-30a8-4a48-a2f8-7ed181b4a13f"}')
