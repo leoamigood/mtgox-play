@@ -5,6 +5,7 @@
  * Time: 6:49 PM
  * To change this template use File | Settings | File Templates.
  */
+package global.scala
 
 import io.backchat.hookup._
 import io.backchat.hookup.Disconnected
@@ -49,7 +50,7 @@ object Global extends GlobalSettings {
     subscriptions(topic) -= client
   }
 
-  val server = HookupServer(ServerInfo("PubSubServer", port = 8128)) {
+  val server = HookupServer(ServerInfo("ws://localhost:8128/", port = 8128)) {
     new HookupServerClient {
       def receive = {
         case Disconnected(_) ⇒
@@ -76,7 +77,7 @@ object Global extends GlobalSettings {
     val db = ReactiveMongoPlugin.db
     val collection = db.collection[JSONCollection]("mtgox")
 
-//    Future {server.start}
+    Future {server.start}
 
     val uri = new URI("ws://websocket.mtgox.com:80/mtgox")
     new DefaultHookupClient(HookupClientConfig(uri)) {
@@ -95,6 +96,7 @@ object Global extends GlobalSettings {
                 case _ => throw new Exception("No channel data: " + message)
               }
               val data = message \ "ticker" \ "last" \ "display_short"
+
               publish(channel, data)
 
               collection.insert(Json.parse(Printer.compact((JsonAST.render(message)))))
