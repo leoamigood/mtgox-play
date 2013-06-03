@@ -3,8 +3,7 @@
 @import global.scala.Global
 @main("Welcome to Mt.Minsi") {
 
-    <div class="greeting"></div>
-    <button class="send">Send</button>
+    <div id="ticker"></div>
 
     <script type="text/javascript" charset="utf-8">
         $(function() {
@@ -16,7 +15,7 @@
             }
 
             sock.onmessage = function(event) {
-                $('.greeting').append(event.data)
+                $('#ticker').html(event.data)
             }
         })
 
