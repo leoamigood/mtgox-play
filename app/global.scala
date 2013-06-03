@@ -38,8 +38,18 @@ object Global extends GlobalSettings {
   def publish(topic: String, data: JValue) {
     println("Publihsed " + topic)
     subscriptions(topic) foreach {
-      _ ! JArray(JString("publish") :: data :: Nil)
+      _ ! excerpt(data)
     }
+  }
+
+  def excerpt(data: JValue) = {
+    val now: JString  = data \ "ticker" \ "now" match {
+      case JString(s) => JString(format.format(s.toLong / 1000))
+      case _ => throw new Exception("Unable to parse: " + data)
+    }
+    val short = data \ "ticker" \ "last" \ "display_short"
+
+    JArray(now :: short :: Nil)
   }
 
   def subscribe(topic: String, client: HookupServerClient) {
@@ -86,8 +96,8 @@ object Global extends GlobalSettings {
         //          send(TextMessage("{\"channel\":\"d5f06780-30a8-4a48-a2f8-7ed181b4a13f\",  \"op\":\"subscribe\"}"))
         case Disconnected(_) =>
           Logger.info("The websocket to " + uri + " disconnected.")
-          Logger.info("Reconnecting...")
-          connect()
+          Logger.info("Attemping to reconnect...")
+          reconnect()
         case JsonMessage(message) => {
           (message \ "ticker") match {
             case JObject(_) =>
@@ -95,9 +105,8 @@ object Global extends GlobalSettings {
                 case JString(s) => s
                 case _ => throw new Exception("No channel data: " + message)
               }
-              val data = message \ "ticker" \ "last" \ "display_short"
 
-              publish(channel, data)
+              publish(channel, message)
 
               collection.insert(Json.parse(Printer.compact((JsonAST.render(message)))))
               if (Logger.isDebugEnabled) report(message)
