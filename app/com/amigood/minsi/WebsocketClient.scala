@@ -3,15 +3,20 @@ package com.amigood.minsi
 import global.scala.Global._
 import io.backchat.hookup._
 import play.api.Logger
-import net.liftweb.json.JsonAST.{JString, JObject}
 import play.api.libs.json.Json
-import net.liftweb.json.{JsonAST, Printer}
+import net.liftweb.json._
+import java.net.URI
+import controllers.{SocketApplication, Application}
+import play.api.libs.iteratee.{Enumerator, Concurrent}
 import io.backchat.hookup.HookupClientConfig
 import io.backchat.hookup.Disconnected
-import net.liftweb.json.JsonAST.JObject
-import net.liftweb.json.JsonAST.JString
 import io.backchat.hookup.JsonMessage
-import java.net.URI
+import java.util.concurrent.ConcurrentHashMap
+
+import scala.collection
+import collection.JavaConverters._
+import java.text.SimpleDateFormat
+
 
 /**
  * Created with IntelliJ IDEA.
@@ -23,7 +28,42 @@ import java.net.URI
 
 object WebsocketClient {
 
+  private val format = new SimpleDateFormat("dd-MM-yyyy hh:mm:ss aaa")
   private val uri = new URI("ws://websocket.mtgox.com:80/mtgox")
+
+  val subscriptions = new ConcurrentHashMap[String, Set[Concurrent.Channel[JValue]]]().asScala.withDefaultValue(Set.empty)
+
+  def publish(topic: String, data: JValue) {
+    val text = excerpt(data)
+    Logger.debug("Publihsed %s => %s".format(topic, text.values(1)))
+    subscriptions(topic) foreach {
+      _ push text
+    }
+  }
+
+  def excerpt(data: JValue) = {
+    val now: JString  = data \ "ticker" \ "now" match {
+      case JString(s) => new JString(format.format(s.toLong / 1000))
+      case _ => throw new Exception("Unable to parse: " + data)
+    }
+    val short = data \ "ticker" \ "last" \ "display_short"
+
+    JArray(now :: short :: Nil)
+  }
+
+  def subscribe(topic: String, client: Concurrent.Channel[JValue]) {
+    subscriptions(topic) += client
+  }
+
+  def unsubscribe(topic: String, client: Concurrent.Channel[JValue]) {
+    subscriptions(topic) -= client
+  }
+
+  def unsubscribe(client: Concurrent.Channel[JValue]) {
+    subscriptions foreach { case (topic, clients) =>
+      clients - client
+    }
+  }
 
   def create = {
     new DefaultHookupClient(HookupClientConfig(uri)) {
@@ -32,8 +72,8 @@ object WebsocketClient {
         //          send(TextMessage("{\"channel\":\"d5f06780-30a8-4a48-a2f8-7ed181b4a13f\",  \"op\":\"subscribe\"}"))
         case Disconnected(_) =>
           Logger.info("The websocket to " + uri + " disconnected.")
-          Logger.info("Attemping to reconnect...")
-          reconnect()
+//          Logger.info("Attemping to reconnect...")
+//          reconnect()
         case JsonMessage(message) => {
           (message \ "ticker") match {
             case JObject(_) =>
@@ -42,9 +82,9 @@ object WebsocketClient {
                 case _ => throw new Exception("No channel data: " + message)
               }
 
-              WebsocketServer.publish(channel, message)
+              publish(channel, message)
 
-              collection.insert(Json.parse(Printer.compact((JsonAST.render(message)))))
+              db.insert(Json.parse(Printer.compact((JsonAST.render(message)))))
             case _ =>
           }
         }

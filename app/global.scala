@@ -22,18 +22,17 @@ import play.api.Play.current
 import play.modules.reactivemongo._
 import play.modules.reactivemongo.json.collection.JSONCollection
 import scala.concurrent.ExecutionContext.Implicits.global
-import com.amigood.minsi.{WebsocketClient, WebsocketServer}
+import com.amigood.minsi.{WebsocketClient}
 
 //use 'play start' to start play in production mode (auto start)
 object Global extends GlobalSettings {
 
-  lazy val db = ReactiveMongoPlugin.db
-  lazy val collection = db.collection[JSONCollection]("mtgox")
+  lazy val db = ReactiveMongoPlugin.db.collection[JSONCollection]("mtgox")
 
   override def onStart(app: Application) {
 
     WebsocketClient.create
-    WebsocketServer.start
+//    WebsocketServer.start
 
   }
 
