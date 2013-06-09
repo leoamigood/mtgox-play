@@ -28,12 +28,10 @@ import com.amigood.minsi.{WebsocketClient}
 object Global extends GlobalSettings {
 
   lazy val db = ReactiveMongoPlugin.db.collection[JSONCollection]("mtgox")
+  lazy val wClient = WebsocketClient.create
 
   override def onStart(app: Application) {
-
-    WebsocketClient.create
-//    WebsocketServer.start
-
+     wClient
   }
 
 }

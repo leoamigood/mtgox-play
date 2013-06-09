@@ -16,7 +16,7 @@ import java.util.concurrent.ConcurrentHashMap
 import scala.collection
 import collection.JavaConverters._
 import java.text.SimpleDateFormat
-
+import scala.util.control.Breaks._
 
 /**
  * Created with IntelliJ IDEA.
@@ -28,49 +28,64 @@ import java.text.SimpleDateFormat
 
 object WebsocketClient {
 
-  private val format = new SimpleDateFormat("dd-MM-yyyy hh:mm:ss aaa")
-  private val uri = new URI("ws://websocket.mtgox.com:80/mtgox")
+  private val format = new SimpleDateFormat("MM-dd-yyyy hh:mm:ss aaa")
+  private val uri = new URI("ws://websocket.mtgox.com:80/mtgox?Currency=USD,EUR")
 
+  var totalClients: Int = 0
   val subscriptions = new ConcurrentHashMap[String, Set[Concurrent.Channel[JValue]]]().asScala.withDefaultValue(Set.empty)
 
   def publish(topic: String, data: JValue) {
-    val text = excerpt(data)
-    Logger.debug("Publihsed %s => %s".format(topic, text.values(1)))
-    Logger.debug("Total clients %s".format(subscriptions(topic).size))
+
+    def extract(data: JValue) = {
+      val now: JString  = data \ "ticker" \ "now" match {
+        case JString(s) => new JString(format.format(s.toLong / 1000))
+        case _ => throw new Exception("Unable to parse: " + data)
+      }
+      val short = data \ "ticker" \ "last" \ "display_short"
+
+      JArray(now :: short :: Nil)
+    }
+
+    val text = extract(data)
+    Logger.debug("Published %s => %s".format(topic, text.values(1)))
+    Logger.debug("Total clients: %s, channels: %s".format(totalClients, subscriptions.size))
     subscriptions(topic) foreach {
       _ push text
     }
   }
 
-  def excerpt(data: JValue) = {
-    val now: JString  = data \ "ticker" \ "now" match {
-      case JString(s) => new JString(format.format(s.toLong / 1000))
-      case _ => throw new Exception("Unable to parse: " + data)
-    }
-    val short = data \ "ticker" \ "last" \ "display_short"
-
-    JArray(now :: short :: Nil)
+  def register(channel: String) {
+    wClient.send(JsonMessage(JArray(List(JField("channel", JString(channel)), JField("op", JString("subscribe"))))))
   }
 
   def subscribe(topic: String, client: Concurrent.Channel[JValue]) {
-    subscriptions(topic) += client
-  }
+    breakable {
+      for (sub <- subscriptions) {
+        if (sub._2.contains(client)) break
+      }
+      totalClients += 1
+    }
 
-  def unsubscribe(topic: String, client: Concurrent.Channel[JValue]) {
-    subscriptions(topic) -= client
+    if (subscriptions(topic).isEmpty) {
+      Logger.debug("Registering new channel: " + topic)
+      register(topic)
+    }
+    subscriptions(topic) += client
   }
 
   def unsubscribe(client: Concurrent.Channel[JValue]) {
     subscriptions foreach { case (topic, clients) =>
       subscriptions(topic) -= client
     }
+    totalClients -= 1
   }
 
   def create = {
     new DefaultHookupClient(HookupClientConfig(uri)) {
       def receive = {
         case Connected =>
-        //          send(TextMessage("{\"channel\":\"d5f06780-30a8-4a48-a2f8-7ed181b4a13f\",  \"op\":\"subscribe\"}"))
+          Logger.debug("Server connected!")
+          //send(TextMessage("{\"channel\":\"d5f06780-30a8-4a48-a2f8-7ed181b4a13f\",  \"op\":\"unsubscribe\"}"))
         case Disconnected(_) =>
           Logger.info("The websocket to " + uri + " disconnected.")
 //          Logger.info("Attemping to reconnect...")
