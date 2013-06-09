@@ -36,6 +36,7 @@ object WebsocketClient {
   def publish(topic: String, data: JValue) {
     val text = excerpt(data)
     Logger.debug("Publihsed %s => %s".format(topic, text.values(1)))
+    Logger.debug("Total clients %s".format(subscriptions(topic).size))
     subscriptions(topic) foreach {
       _ push text
     }
@@ -61,7 +62,7 @@ object WebsocketClient {
 
   def unsubscribe(client: Concurrent.Channel[JValue]) {
     subscriptions foreach { case (topic, clients) =>
-      clients - client
+      subscriptions(topic) -= client
     }
   }
 
