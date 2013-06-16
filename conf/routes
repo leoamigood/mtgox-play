@@ -3,6 +3,7 @@
 # ~~~~
 
 # Home page
+GET     /order                      controllers.Application.order
 GET     /ticker/stream              controllers.SocketApplication.stream
 GET     /ticker                     controllers.Application.ticker
 GET     /                           controllers.Application.index

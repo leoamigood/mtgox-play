@@ -17,6 +17,8 @@ import scala.collection
 import collection.JavaConverters._
 import java.text.SimpleDateFormat
 import scala.util.control.Breaks._
+import scala.compat.Platform
+import com.roundeights.hasher.Implicits._
 
 /**
  * Created with IntelliJ IDEA.
@@ -57,6 +59,17 @@ object WebsocketClient {
   def register(channel: String) {
     wClient.send(JsonMessage(JArray(List(JField("channel", JString(channel)), JField("op", JString("subscribe"))))))
   }
+
+  def authenticate(endpoint: String) {
+    val apiKey = "b54af3cf-7c5a-46c8-90bb-ca3b338c95b4"
+    val apiSecret = "tuRWHa4ctklmpAr0F+FNAK4oXm7m1QDV+FScwpBsFTfYak69lbZ4b7qAgPtsKypA462WTiPx9YQzGXDLkeQ4ng=="
+
+    val nonce = Platform.currentTime.toString
+    val requestId = nonce.md5
+    val call = JsonMessage(JArray(List(JField("id", JString(requestId)), JField("call", JString(endpoint)), JField("nonce", JString(nonce)),  JField("item", JString("BTC")))))
+    println(call)
+  }
+
 
   def subscribe(topic: String, client: Concurrent.Channel[JValue]) {
     breakable {
