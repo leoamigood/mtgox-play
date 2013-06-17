@@ -12,3 +12,6 @@ dist
 /.classpath
 /.project
 /RUNNING_PID
+
+#do not include mtgox api and secret keys
+conf/mtgox.properties

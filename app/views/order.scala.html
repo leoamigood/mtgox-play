@@ -1,0 +1,22 @@
+@(message: String)(implicit request: RequestHeader)
+
+@main("Welcome to Mt.Minsi") {
+
+    <div id="orders"></div>
+
+    <script type="text/javascript" charset="utf-8">
+        $(function() {
+            var WS = window['MozWebSocket'] ? MozWebSocket : WebSocket
+            var sock = new WS("@routes.SocketApplication.stream().webSocketURL()")
+
+            sock.onopen = function() {
+                sock.send('{"info":"orders"}')
+            }
+
+            sock.onmessage = function(event) {
+                $('#orders').html(event.data)
+            }
+        })
+
+    </script>
+}

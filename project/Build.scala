@@ -12,7 +12,8 @@ object ApplicationBuild extends Build {
     jdbc,
     anorm,
     "io.backchat.hookup" % "hookup_2.10" % "0.2.3",
-    "org.reactivemongo" %% "play2-reactivemongo" % "0.9"
+    "org.reactivemongo" %% "play2-reactivemongo" % "0.9",
+    "com.roundeights" %% "hasher" % "0.3"
   )
 
   val main = play.Project(appName, appVersion, appDependencies).settings(

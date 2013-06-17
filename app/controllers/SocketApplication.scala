@@ -31,6 +31,10 @@ object SocketApplication {
         case JString(s) => subscribe(s, channel)
         case _ =>
       }
+      json \ "info" match {
+        case JString(_) => authenticate("private/info")
+        case _ =>
+      }
     }).mapDone { _ =>
       unsubscribe(channel)
     }

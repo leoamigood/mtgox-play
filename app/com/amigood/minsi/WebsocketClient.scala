@@ -16,9 +16,17 @@ import scala.collection
 import collection.JavaConverters._
 import java.text.SimpleDateFormat
 import scala.util.control.Breaks._
+import scala.compat.Platform
+import com.roundeights.hasher.Implicits._
 
 import org.json4s._
 import org.json4s.jackson.JsonMethods._
+import org.apache.commons.codec.binary.Base64
+import java.lang.Integer
+import com.roundeights.hasher.Hasher
+import javax.crypto.spec.SecretKeySpec
+import javax.crypto.Mac
+import play.Play
 
 /**
  * Created with IntelliJ IDEA.
@@ -57,8 +65,24 @@ object WebsocketClient {
   }
 
   def register(channel: String) {
-    wClient.send(JsonMessage(new JObject(List(new JField("channel", new JString(channel)), new JField("op", new JString("subscribe"))))))
+    wClient.send(JsonMessage(parse(s"""{ "channel":"$channel", "op":"subscribe" }""")))
   }
+
+  def authenticate(endpoint: String) {
+    def hex2bytes(hex: String): Array[Byte] = {
+      hex.filter(_ != '-').grouped(2).toArray.map(Integer.parseInt(_, 16).toByte)
+    }
+
+    val apiKey: Array[Byte] = hex2bytes(Play.application.configuration.getString("mtgox.apiKey"))
+    val apiSecret: Array[Byte] = Base64.decodeBase64(Play.application.configuration.getString("mtgox.apiSecret") getBytes)
+
+    val nonce = Platform.currentTime.toString
+    val requestId = nonce.md5
+    val call: String = s"""{ "id":"$requestId", "call":"$endpoint", "nonce":"$nonce", "params":"", "item":"BTC" }"""
+    val query: Array[Byte] = apiKey ++ call.hmacSha512(apiSecret).bytes ++ call.getBytes
+    wClient.send(s""" {"op":"call", "id":"$requestId", "call":"${new String(Base64.encodeBase64(query))}", "context":"mtgox.com"} """)
+  }
+
 
   def subscribe(topic: String, client: Concurrent.Channel[JValue]) {
     breakable {
@@ -105,6 +129,8 @@ object WebsocketClient {
               db.insert(Json.parse(compact((render(message)))))
             case _ =>
           }
+
+          if(message \ "channel" == JNothing) println(pretty(render(message)))
         }
       }
 
