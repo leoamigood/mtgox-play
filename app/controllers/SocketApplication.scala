@@ -4,10 +4,9 @@ import play.api.libs.iteratee.{Concurrent, Iteratee}
 import play.api.mvc.WebSocket
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import net.liftweb.json._
 import com.amigood.minsi.WebsocketClient._
-import net.liftweb.json.JsonAST.JValue
-import net.liftweb.json.JsonAST.JString
+import org.json4s._
+import org.json4s.jackson.JsonMethods._
 
 /**
  * Created with IntelliJ IDEA.
@@ -19,8 +18,8 @@ import net.liftweb.json.JsonAST.JString
 object SocketApplication {
 
   implicit val jsonLiftFrame: WebSocket.FrameFormatter[JValue] = WebSocket.FrameFormatter.stringFrame.transform(
-    json => Printer.pretty((JsonAST.render(json))),
-    s => JsonParser.parse(s)
+    json => pretty((render(json))),
+    s => parse(s)
   )
 
   def stream = WebSocket.using[JValue] { request =>

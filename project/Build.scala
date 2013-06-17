@@ -11,7 +11,7 @@ object ApplicationBuild extends Build {
     // Add your project dependencies here,
     jdbc,
     anorm,
-    "io.backchat.hookup" % "hookup_2.10" % "0.3.0-SNAPSHOT",
+    "io.backchat.hookup" % "hookup_2.10" % "0.2.3",
     "org.reactivemongo" %% "play2-reactivemongo" % "0.9"
   )
 

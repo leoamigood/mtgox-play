@@ -12,8 +12,6 @@ import io.backchat.hookup.Disconnected
 import io.backchat.hookup.HookupClientConfig
 import io.backchat.hookup.JsonMessage
 import java.net.URI
-import net.liftweb.json.{Printer, JsonAST}
-import net.liftweb.json.JsonAST._
 import play.api._
 
 import play.api.libs.json.Json

@@ -4,7 +4,6 @@ import global.scala.Global._
 import io.backchat.hookup._
 import play.api.Logger
 import play.api.libs.json.Json
-import net.liftweb.json._
 import java.net.URI
 import controllers.{SocketApplication, Application}
 import play.api.libs.iteratee.{Enumerator, Concurrent}
@@ -17,6 +16,9 @@ import scala.collection
 import collection.JavaConverters._
 import java.text.SimpleDateFormat
 import scala.util.control.Breaks._
+
+import org.json4s._
+import org.json4s.jackson.JsonMethods._
 
 /**
  * Created with IntelliJ IDEA.
@@ -43,7 +45,7 @@ object WebsocketClient {
       }
       val short = data \ "ticker" \ "last" \ "display_short"
 
-      JArray(now :: short :: Nil)
+      new JArray(now :: short :: Nil)
     }
 
     val text = extract(data)
@@ -55,7 +57,7 @@ object WebsocketClient {
   }
 
   def register(channel: String) {
-    wClient.send(JsonMessage(JArray(List(JField("channel", JString(channel)), JField("op", JString("subscribe"))))))
+    wClient.send(JsonMessage(new JObject(List(new JField("channel", new JString(channel)), new JField("op", new JString("subscribe"))))))
   }
 
   def subscribe(topic: String, client: Concurrent.Channel[JValue]) {
@@ -100,7 +102,7 @@ object WebsocketClient {
 
               publish(channel, message)
 
-              db.insert(Json.parse(Printer.compact((JsonAST.render(message)))))
+              db.insert(Json.parse(compact((render(message)))))
             case _ =>
           }
         }
