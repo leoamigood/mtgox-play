@@ -23,10 +23,11 @@ import org.json4s._
 import org.json4s.jackson.JsonMethods._
 import org.apache.commons.codec.binary.Base64
 import java.lang.Integer
-import com.roundeights.hasher.Hasher
+import com.roundeights.hasher.Implicits._
 import javax.crypto.spec.SecretKeySpec
 import javax.crypto.Mac
 import play.Play
+import com.roundeights.hasher.Hasher
 
 /**
  * Created with IntelliJ IDEA.
@@ -79,7 +80,7 @@ object WebsocketClient {
     val nonce = Platform.currentTime.toString
     val requestId = nonce.md5
     val call: String = s"""{ "id":"$requestId", "call":"$endpoint", "nonce":"$nonce", "params":"", "item":"BTC" }"""
-    val query: Array[Byte] = apiKey ++ call.hmacSha512(apiSecret).bytes ++ call.getBytes
+    val query: Array[Byte] = apiKey ++ call.hmac(apiSecret).sha512.bytes ++ call.getBytes
     wClient.send(s""" {"op":"call", "id":"$requestId", "call":"${new String(Base64.encodeBase64(query))}", "context":"mtgox.com"} """)
   }
 
