@@ -3,9 +3,11 @@
 # ~~~~
 
 # Home page
-GET     /order                      controllers.Application.order
-GET     /ticker/stream              controllers.SocketApplication.stream
 GET     /ticker                     controllers.Application.ticker
+GET     /ticker/stream              controllers.SocketApplication.stream
+GET     /trade/buy                  controllers.OrderController.buy
+GET     /trade/sell                 controllers.OrderController.sell
+GET     /history                    controllers.Application.order
 GET     /                           controllers.Application.index
 
 # Map static resources from the /public folder to the /assets URL path

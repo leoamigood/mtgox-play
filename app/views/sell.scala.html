@@ -1,0 +1,18 @@
+@(tradeForm: Form[Ask])
+
+@main("Welcome to Mt.Minsi: Trade") {
+
+    @helper.form(action = routes.OrderController.sell) {
+
+        <fieldset>
+            @helper.inputText(tradeForm("amount"))
+            @helper.inputText(tradeForm("price"))<fd></fd>
+        </fieldset>
+
+        <div class="actions">
+            <input type="submit" class="btn primary" value="Sell">
+            <a href="@routes.OrderController.sell" class="btn">Cancel</a>
+        </div>
+    }
+
+}

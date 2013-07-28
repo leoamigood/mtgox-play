@@ -40,7 +40,7 @@ import com.roundeights.hasher.Hasher
 object WebsocketClient {
 
   private val format = new SimpleDateFormat("MM-dd-yyyy hh:mm:ss aaa")
-  private val uri = new URI("ws://websocket.mtgox.com:80/mtgox?Currency=USD,EUR")
+  private val uri = new URI("ws://websocket.mtgox.com:80/mtgox?Currency=USD")
 
   var totalClients: Int = 0
   val subscriptions = new ConcurrentHashMap[String, Set[Concurrent.Channel[JValue]]]().asScala.withDefaultValue(Set.empty)
